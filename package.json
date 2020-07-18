@@ -1,12 +1,15 @@
 {
   "name": "ffmodule",
   "version": "0.0.1",
-  "description": "",
-  "main": "ff.js",
+  "description": "ffmpeg based module with focus on streaming",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Mateusz Zając",
+  "license": "ISC",
+  "dependencies": {
+    "child_process": "^1.0.2"
+  }
 }
