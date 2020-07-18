@@ -48,11 +48,10 @@ let mod = {
 
 
 function dshowDeviceScan(){
-
     
     let {output} = proc.spawnSync('ffmpeg', '-list_devices true -f dshow -i dummy'.split(' '))
     let q = output.join('').toString()
-    q = q.split('[').shift()
+    q = q.split('[')
     q.shift()
     q.shift()
     q = q.join(']').split(']')
@@ -83,17 +82,13 @@ function dshowDeviceScan(){
 }
 
 
-function desktopStream(destination='udp://127.0.0.1:1234', format='mpegts'){
-
-
-
+function desktopStream(destination='127.0.0.1:1234', format='mpegts'){
     let source = []
-
-    console.log(mod.conf)
 
     if(mod.conf.system == 'unix'){
 
         let resolution = '1280x1024'
+
 
         source.push('-video_size')
         source.push(resolution)
@@ -108,6 +103,7 @@ function desktopStream(destination='udp://127.0.0.1:1234', format='mpegts'){
         source.push('-f')
         source.push('dshow')
         source.push('-i')
+
         source.push('video="screen-capture-recorder":audio="virtual-audio-capturer"')
     }
     else
@@ -121,7 +117,7 @@ function desktopStream(destination='udp://127.0.0.1:1234', format='mpegts'){
 
     args.push('-f')
     args.push(format)
-    args.push(destination)
+    args.push('udp://'+destination)
 
     console.log('Starting stream with command: ffmpeg '+ args.join(' '))
 
@@ -133,8 +129,6 @@ function desktopStream(destination='udp://127.0.0.1:1234', format='mpegts'){
     //mpv udp://127.0.0.1:1234
     //mpv udp://127.0.0.1:1234 --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1
 }
-
-
 
 
 
