@@ -2,59 +2,29 @@ const proc = require('child_process')
 
 
 
-function configure(newer){
-
-    let result = {}
-
-    if(['windows 10', 'unix', 'macos'].includes(newer.system))
-        result.system = newer.system
-    else
-        throw 'no such system'
-
-    if(['nvidia', 'amd', 'intel'].includes(newer.graphicsCard))
-        result.gpu = newer.graphicsCard
-    else
-        throw 'no such gpu'
-
-    return result
-}
-
-
-let mod = {
-    conf: {
-        system: 'windows 10', //unix, macos, android?
-        gpu: 'nvidia' //amd, intel
-
-    },
-    configure: (system, architecture='amd64', graphicsCard='nvidia') => mod.conf = configure({system, architecture, graphicsCard}),
-    hello: function(){ console.log('hello') },
-    record: () => recorder(this.conf),
-    streamDesktop: desktopStream,
-    scanDevices: () => {
-        if(mod.conf.system == 'windows 10')
-            return dshowDeviceScan()
-        else 
-            throw 'no device scan for this os yet'
-    },
-    streamMicrophone: audioStream
-
-
-}
-
-
 function audioStream(destination='127.0.0.1:1234', format='mpegts', device=''){
 
     let args = []
 
-    if(mod.conf.system == 'windows 10'){
-        if(device == '')
-            device = dshowDeviceScan().audio[0].split('"')[1]
 
-        args = `-f dshow -i`.split(' ')
-        args.push('audio='+device)
+    switch(process.platform){
+        case 'win32':
+            if(device == '')
+                device = dshowDeviceScan().audio[0].split('"')[1]
+
+            args = `-f dshow -i`.split(' ')
+            args.push('audio='+device)
+            break
+        case 'linux':
+            if(device == '')
+                device = 'hw:0'
+
+            args = `-f alsa -i ${device}`.split(' ')
+            break
+        default:
+            throw 'no audio streaming for this system yet'
     }
-    else 
-        throw 'no audio streaming for this system yet'
+
 
 
     args = args.concat(`-f ${format} udp://${destination}`.split(' '))
@@ -98,6 +68,36 @@ function dshowDeviceScan(){
                 result.video.push(name)
         }
 
+    return 
+}
+
+
+function alsaDeviceScan(){
+    let {output} = proc.spawnSync('arecord', ['-l'])
+    let q = output.toString().split('\n')
+    q.shift()
+
+    let tmp = ''
+    for(let i of q)
+        if(i[0] != ' ')
+            tmp += i + '\n'
+    q = tmp.split('\n')
+    q.pop()
+    q.pop()
+    q = q.map(line => {
+        return {
+            name: line.split(':')[1].split(',')[0].trim(),
+            id: line.split(' ')[1].slice(0, -1)
+        }
+    })
+
+    let result = []
+    for(let i = 0; i < q.length -1; i++)
+        if(q[i].id != q[i+1].id)
+            result.push(q[i])
+    result.push(q[q.length-1])
+
+    console.log(result)
     return result
 }
 
@@ -149,6 +149,23 @@ function desktopStream(destination='127.0.0.1:1234', format='mpegts'){
     //mpv udp://127.0.0.1:1234 --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1
 }
 
-
+let mod = {
+    streamDesktop: desktopStream,
+    scanDevices: () => {
+        switch(process.platform){
+            case 'win32':
+                return dshowDeviceScan()
+            case 'linux':
+                return {
+                    audio: alsaDeviceScan(),
+                    video: 'not ready yet'
+                }
+            default:
+                throw 'no device scan for this os yet'
+        }
+    },
+    streamMicrophone: audioStream
+    
+}
 
 module.exports = mod

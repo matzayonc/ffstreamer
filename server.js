@@ -1,6 +1,6 @@
 const ff = require('./ffspawner')
 
-ff.configure('windows 10')
-ff.streamDesktop()
+
+//ff.streamDesktop()
 //ff.streamMicrophone()
-//ff.scanDevices()
+ff.scanDevices()
