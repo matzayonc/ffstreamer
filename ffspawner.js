@@ -11,11 +11,6 @@ function configure(newer){
     else
         throw 'no such system'
 
-    if(['amd64', 'i386', 'arm'].includes(newer.architecture))
-        result.arch = newer.architecture
-    else
-        throw 'no such architecture'
-
     if(['nvidia', 'amd', 'intel'].includes(newer.graphicsCard))
         result.gpu = newer.graphicsCard
     else
@@ -28,7 +23,6 @@ function configure(newer){
 let mod = {
     conf: {
         system: 'windows 10', //unix, macos, android?
-        arch: '64bit', //32bit, arm
         gpu: 'nvidia' //amd, intel
 
     },
@@ -41,9 +35,35 @@ let mod = {
             return dshowDeviceScan()
         else 
             throw 'no device scan for this os yet'
+    },
+    streamMicrophone: audioStream
 
+
+}
+
+
+function audioStream(destination='127.0.0.1:1234', format='mpegts', device=''){
+
+    let args = []
+
+    if(mod.conf.system == 'windows 10'){
+        if(device == '')
+            device = dshowDeviceScan().audio[0].split('"')[1]
+
+        args = `-f dshow -i`.split(' ')
+        args.push('audio='+device)
     }
+    else 
+        throw 'no audio streaming for this system yet'
 
+
+    args = args.concat(`-f ${format} udp://${destination}`.split(' '))
+
+
+    console.log('Starting audio stream with command: ffmpeg '+ args.join(' '))
+    let desktop = proc.spawn('ffmpeg', args)
+    desktop.stdout.on('data', data => console.log(data.toString()))
+    desktop.stderr.on('data', data => console.error(data.toString()))
 }
 
 
@@ -89,7 +109,6 @@ function desktopStream(destination='127.0.0.1:1234', format='mpegts'){
 
         let resolution = '1280x1024'
 
-
         source.push('-video_size')
         source.push(resolution)
 
@@ -104,7 +123,7 @@ function desktopStream(destination='127.0.0.1:1234', format='mpegts'){
         source.push('dshow')
         source.push('-i')
 
-        source.push('video="screen-capture-recorder":audio="virtual-audio-capturer"')
+        source.push('video=screen-capture-recorder:audio=virtual-audio-capturer')
     }
     else
         throw 'desktop streaming for this system is not ready'
@@ -119,7 +138,7 @@ function desktopStream(destination='127.0.0.1:1234', format='mpegts'){
     args.push(format)
     args.push('udp://'+destination)
 
-    console.log('Starting stream with command: ffmpeg '+ args.join(' '))
+    console.log('Starting desktop stream with command: ffmpeg '+ args.join(' '))
 
     let desktop = proc.spawn('ffmpeg', args)
     desktop.stdout.on('data', data => console.log(data.toString()))
