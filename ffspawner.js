@@ -68,7 +68,7 @@ function dshowDeviceScan(){
                 result.video.push(name)
         }
 
-    return 
+    return result
 }
 
 
