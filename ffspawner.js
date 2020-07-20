@@ -105,29 +105,18 @@ function alsaDeviceScan(){
 function desktopStream(destination='127.0.0.1:1234', format='mpegts'){
     let source = []
 
-    if(mod.conf.system == 'unix'){
-
-        let resolution = '1280x1024'
-
-        source.push('-video_size')
-        source.push(resolution)
-
-        source.push('-f')
-        source.push('x11grab')
-
-        source.push('-i')
-        source.push(':1')
+    switch(process.platform){
+        case 'linux':
+            let resolution = '1280x1024'
+            source = source.concat(`-video_size ${resolution} -f x11grab -i :1`).split(' ')
+            break
+        case 'win32':
+            source = source.concat('-f dshow -i'.split(' '))
+            source.push('video=screen-capture-recorder:audio=virtual-audio-capturer')
+            break
+        default:
+            throw 'desktop streaming for this system is not ready'
     }
-    else if(mod.conf.system == 'windows 10'){
-        source.push('-f')
-        source.push('dshow')
-        source.push('-i')
-
-        source.push('video=screen-capture-recorder:audio=virtual-audio-capturer')
-    }
-    else
-        throw 'desktop streaming for this system is not ready'
-    
 
 
     let args = []
@@ -164,7 +153,7 @@ let mod = {
                 throw 'no device scan for this os yet'
         }
     },
-    streamMicrophone: audioStream
+    streamMicrophone: audioStream //not suitable for real-time communication :(
     
 }
 
